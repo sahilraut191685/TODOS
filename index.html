@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>TaskFlow</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+<style>
+:root {
+  --glass: rgba(255, 255, 255, 0.12);
+  --border: rgba(255, 255, 255, 0.25);
+  --text: #f8fafc;
+  --muted: #cbd5f5;
+  --primary: #7c3aed;
+  --success: #22c55e;
+  --danger: #ef4444;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: "Inter", system-ui, -apple-system;
+  background: linear-gradient(135deg, #020617, #312e81, #0f172a);
+  min-height: 100vh;
+  color: var(--text);
+  padding: 40px 16px;
+}
+
+.container {
+  max-width: 900px;
+  margin: auto;
+  animation: fadeIn 0.8s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 32px;
+}
+
+header h1 {
+  font-size: 34px;
+  font-weight: 800;
+  background: linear-gradient(to right, #a78bfa, #22d3ee);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+header span {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.card {
+  background: var(--glass);
+  backdrop-filter: blur(18px);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 24px;
+  margin-bottom: 28px;
+  box-shadow: 0 30px 80px rgba(0,0,0,0.45);
+}
+
+label {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+input, textarea, select {
+  width: 100%;
+  margin-top: 6px;
+  margin-bottom: 16px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(0,0,0,0.35);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-size: 14px;
+}
+
+textarea {
+  resize: none;
+}
+
+button {
+  background: linear-gradient(135deg, #7c3aed, #2563eb);
+  border: none;
+  border-radius: 14px;
+  padding: 14px;
+  width: 100%;
+  color: white;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 30px rgba(124,58,237,0.6);
+}
+
+.todo {
+  background: var(--glass);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 18px;
+  margin-bottom: 16px;
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.todo.completed {
+  opacity: 0.6;
+  text-decoration: line-through;
+}
+
+.todo h3 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.todo p {
+  margin: 6px 0 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.badge {
+  font-size: 11px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.p1 { background: #dc2626; }
+.p2 { background: #f97316; }
+.p3 { background: #eab308; color: black; }
+.p4 { background: #22c55e; }
+.p5 { background: #38bdf8; }
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.actions button {
+  padding: 8px 10px;
+  font-size: 12px;
+}
+
+.delete {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+  <header>
+    <h1>TaskFlow</h1>
+    <span>Advanced Todo Management</span>
+  </header>
+
+  <!-- Create Todo -->
+  <div class="card">
+    <label>Title</label>
+    <input id="title" placeholder="Prepare for exams" />
+
+    <label>Description</label>
+    <textarea id="description" rows="3" placeholder="Finish syllabus + revision"></textarea>
+
+    <label>Priority</label>
+    <select id="priority">
+      <option value="1">🔥 Critical</option>
+      <option value="2">High</option>
+      <option value="3">Medium</option>
+      <option value="4">Low</option>
+      <option value="5">Optional</option>
+    </select>
+
+    <button onclick="addTodo()">Create Task</button>
+  </div>
+
+  <!-- Todos -->
+  <div id="todos"></div>
+</div>
+
+<script>
+const API = "http://127.0.0.1:8000";
+
+async function loadTodos() {
+  const res = await fetch(`${API}/`);
+  const todos = await res.json();
+  const list = document.getElementById("todos");
+  list.innerHTML = "";
+
+  if (todos.length === 0) {
+    list.innerHTML = `<div class="card">No tasks yet. Start building momentum 🚀</div>`;
+    return;
+  }
+
+  todos.forEach(todo => {
+    const div = document.createElement("div");
+    div.className = "todo" + (todo.complete ? " completed" : "");
+
+    div.innerHTML = `
+      <div>
+        <h3>${todo.title}</h3>
+        <p>${todo.description}</p>
+      </div>
+      <div class="actions">
+        <span class="badge p${todo.priority}">P${todo.priority}</span>
+        <button onclick="toggle(${todo.id}, ${todo.complete})">
+          ${todo.complete ? "Undo" : "Complete"}
+        </button>
+        <button class="delete" onclick="removeTodo(${todo.id})">Delete</button>
+      </div>
+    `;
+
+    list.appendChild(div);
+  });
+}
+
+async function addTodo() {
+  await fetch(`${API}/todo`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      title: title.value,
+      description: description.value,
+      priority: Number(priority.value),
+      complete: false
+    })
+  });
+
+  title.value = "";
+  description.value = "";
+  loadTodos();
+}
+
+async function toggle(id, state) {
+  const res = await fetch(`${API}/todo/${id}`);
+  const todo = await res.json();
+  todo.complete = !state;
+
+  await fetch(`${API}/todo/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(todo)
+  });
+
+  loadTodos();
+}
+
+async function removeTodo(id) {
+  await fetch(`${API}/todo/${id}`, { method: "DELETE" });
+  loadTodos();
+}
+
+loadTodos();
+</script>
+
+</body>
+</html>
