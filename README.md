@@ -13,6 +13,7 @@ This project demonstrates clean API design, database integration, and a polished
 - RESTful API using FastAPI
 - Modern, animated frontend UI
 - CORS enabled for frontend-backend communication
+- upcomming features auth ,jwt etc and more 
 
 ---
 
